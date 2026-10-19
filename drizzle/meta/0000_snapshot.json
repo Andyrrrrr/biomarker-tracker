@@ -1,0 +1,667 @@
+{
+  "id": "e64ec2d2-e452-4be4-b783-5a6eb0893473",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.biomarker_aliases": {
+      "name": "biomarker_aliases",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "biomarker_id": {
+          "name": "biomarker_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "alias": {
+          "name": "alias",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "report_source",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "biomarker_aliases_any_source": {
+          "name": "biomarker_aliases_any_source",
+          "columns": [
+            {
+              "expression": "alias",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"biomarker_aliases\".\"source\" is null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "biomarker_aliases_per_source": {
+          "name": "biomarker_aliases_per_source",
+          "columns": [
+            {
+              "expression": "alias",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "source",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"biomarker_aliases\".\"source\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "biomarker_aliases_biomarker_id_biomarkers_id_fk": {
+          "name": "biomarker_aliases_biomarker_id_biomarkers_id_fk",
+          "tableFrom": "biomarker_aliases",
+          "tableTo": "biomarkers",
+          "columnsFrom": [
+            "biomarker_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.biomarker_categories": {
+      "name": "biomarker_categories",
+      "schema": "",
+      "columns": {
+        "biomarker_id": {
+          "name": "biomarker_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category_id": {
+          "name": "category_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "biomarker_categories_biomarker_id_biomarkers_id_fk": {
+          "name": "biomarker_categories_biomarker_id_biomarkers_id_fk",
+          "tableFrom": "biomarker_categories",
+          "tableTo": "biomarkers",
+          "columnsFrom": [
+            "biomarker_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "biomarker_categories_category_id_categories_id_fk": {
+          "name": "biomarker_categories_category_id_categories_id_fk",
+          "tableFrom": "biomarker_categories",
+          "tableTo": "categories",
+          "columnsFrom": [
+            "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "biomarker_categories_biomarker_id_category_id_pk": {
+          "name": "biomarker_categories_biomarker_id_category_id_pk",
+          "columns": [
+            "biomarker_id",
+            "category_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.biomarkers": {
+      "name": "biomarkers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "short_name": {
+          "name": "short_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "result_type": {
+          "name": "result_type",
+          "type": "result_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'numeric'"
+        },
+        "unit": {
+          "name": "unit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "range_low": {
+          "name": "range_low",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "range_high": {
+          "name": "range_high",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "optimal_enabled": {
+          "name": "optimal_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "optimal_low": {
+          "name": "optimal_low",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "optimal_high": {
+          "name": "optimal_high",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "normal_values": {
+          "name": "normal_values",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "biomarkers_slug_unique": {
+          "name": "biomarkers_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.categories": {
+      "name": "categories",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "icon": {
+          "name": "icon",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "categories_slug_unique": {
+          "name": "categories_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.reports": {
+      "name": "reports",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "report_source",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "external_id": {
+          "name": "external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lab": {
+          "name": "lab",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "collected_on": {
+          "name": "collected_on",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "collected_time": {
+          "name": "collected_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ordering_account": {
+          "name": "ordering_account",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fasting": {
+          "name": "fasting",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_file": {
+          "name": "source_file",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "imported_at": {
+          "name": "imported_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "reports_source_external_id_index": {
+          "name": "reports_source_external_id_index",
+          "columns": [
+            {
+              "expression": "source",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "external_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "reports_collected_on_index": {
+          "name": "reports_collected_on_index",
+          "columns": [
+            {
+              "expression": "collected_on",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.results": {
+      "name": "results",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "report_id": {
+          "name": "report_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "biomarker_id": {
+          "name": "biomarker_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value_numeric": {
+          "name": "value_numeric",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "comparator": {
+          "name": "comparator",
+          "type": "comparator",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "value_text": {
+          "name": "value_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reported_value": {
+          "name": "reported_value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reported_unit": {
+          "name": "reported_unit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lab_range_text": {
+          "name": "lab_range_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lab_range_low": {
+          "name": "lab_range_low",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lab_range_high": {
+          "name": "lab_range_high",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lab_flag": {
+          "name": "lab_flag",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_calculated": {
+          "name": "is_calculated",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "raw_name": {
+          "name": "raw_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "results_report_id_biomarker_id_index": {
+          "name": "results_report_id_biomarker_id_index",
+          "columns": [
+            {
+              "expression": "report_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "biomarker_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "results_biomarker_id_index": {
+          "name": "results_biomarker_id_index",
+          "columns": [
+            {
+              "expression": "biomarker_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "results_report_id_reports_id_fk": {
+          "name": "results_report_id_reports_id_fk",
+          "tableFrom": "results",
+          "tableTo": "reports",
+          "columnsFrom": [
+            "report_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "results_biomarker_id_biomarkers_id_fk": {
+          "name": "results_biomarker_id_biomarkers_id_fk",
+          "tableFrom": "results",
+          "tableTo": "biomarkers",
+          "columnsFrom": [
+            "biomarker_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    }
+  },
+  "enums": {
+    "public.comparator": {
+      "name": "comparator",
+      "schema": "public",
+      "values": [
+        "<",
+        "<=",
+        ">",
+        ">="
+      ]
+    },
+    "public.report_source": {
+      "name": "report_source",
+      "schema": "public",
+      "values": [
+        "quest",
+        "insidetracker",
+        "function",
+        "manual"
+      ]
+    },
+    "public.result_type": {
+      "name": "result_type",
+      "schema": "public",
+      "values": [
+        "numeric",
+        "qualitative"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
