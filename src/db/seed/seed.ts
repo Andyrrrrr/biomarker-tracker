@@ -1,37 +1,60 @@
-import { inArray } from "drizzle-orm";
+import { inArray, max } from "drizzle-orm";
 import type { Db } from "@/db";
 import { biomarkerAliases, biomarkerCategories, biomarkers, categories } from "@/db/schema";
 import { normalizeName } from "@/lib/names";
 import { BIOMARKERS, CATEGORIES } from "./catalog";
 
-// Inserts whatever in the catalog is missing from the database. Never updates or deletes, so
-// edits made in the database survive re-seeding.
+// Adds catalog entries the database doesn't have yet. It never updates or deletes, and it only
+// fills in around new biomarkers, so what's removed in the app stays removed:
+// - Biomarkers: any catalog slug the database lacks.
+// - Category links: only for the biomarkers this run added. A link removed in the app isn't
+//   restored, and giving an existing biomarker another category is done in the app.
+// - Categories: all of them on an empty database; after that, only ones a new biomarker needs.
+//   The database can't tell a deleted category from one new to the catalog, so a deleted one
+//   comes back only if a newly added biomarker lists it.
+// - Aliases: every catalog alias the database lacks, so adding a name to catalog.ts and seeding
+//   is how an import learns it.
+// New rows go after everything already there, in catalog order; order is edited in the app
+// (manage → Categories), so the catalog's order only counts on an empty database.
 export async function seedCatalog(db: Db) {
   return db.transaction(async (tx) => {
-    const newCategories = await tx
-      .insert(categories)
-      .values(CATEGORIES.map((c, i) => ({ ...c, sortOrder: i })))
-      .onConflictDoNothing()
-      .returning({ id: categories.id });
+    const haveBiomarkers = new Set((await tx.select({ slug: biomarkers.slug }).from(biomarkers)).map((b) => b.slug));
+    const [{ lastBiomarker }] = await tx.select({ lastBiomarker: max(biomarkers.sortOrder) }).from(biomarkers);
+    const missingBiomarkers = BIOMARKERS.filter((b) => !haveBiomarkers.has(b.slug));
+    const newBiomarkers = missingBiomarkers.length
+      ? await tx
+          .insert(biomarkers)
+          .values(
+            missingBiomarkers.map((b, i) => ({
+              slug: b.slug,
+              name: b.name,
+              shortName: b.shortName,
+              description: b.description,
+              resultType: b.qualitative ? ("qualitative" as const) : ("numeric" as const),
+              unit: b.unit,
+              rangeLow: b.low,
+              rangeHigh: b.high,
+              normalValues: b.normal,
+              sortOrder: (lastBiomarker ?? -1) + 1 + i,
+            })),
+          )
+          .onConflictDoNothing()
+          .returning({ id: biomarkers.id })
+      : [];
 
-    const newBiomarkers = await tx
-      .insert(biomarkers)
-      .values(
-        BIOMARKERS.map((b, i) => ({
-          slug: b.slug,
-          name: b.name,
-          shortName: b.shortName,
-          description: b.description,
-          resultType: b.qualitative ? ("qualitative" as const) : ("numeric" as const),
-          unit: b.unit,
-          rangeLow: b.low,
-          rangeHigh: b.high,
-          normalValues: b.normal,
-          sortOrder: i,
-        })),
-      )
-      .onConflictDoNothing()
-      .returning({ id: biomarkers.id });
+    const haveCategories = new Set((await tx.select({ slug: categories.slug }).from(categories)).map((c) => c.slug));
+    const needed = new Set(missingBiomarkers.flatMap((b) => b.categories));
+    const missingCategories = CATEGORIES.filter(
+      (c) => !haveCategories.has(c.slug) && (!haveCategories.size || needed.has(c.slug)),
+    );
+    const [{ lastCategory }] = await tx.select({ lastCategory: max(categories.sortOrder) }).from(categories);
+    const newCategories = missingCategories.length
+      ? await tx
+          .insert(categories)
+          .values(missingCategories.map((c, i) => ({ ...c, sortOrder: (lastCategory ?? -1) + 1 + i })))
+          .onConflictDoNothing()
+          .returning({ id: categories.id })
+      : [];
 
     const categoryIds = new Map(
       (await tx.select({ id: categories.id, slug: categories.slug }).from(categories)).map((c) => [
@@ -48,18 +71,20 @@ export async function seedCatalog(db: Db) {
       ).map((b) => [b.slug, b.id]),
     );
 
-    const links = BIOMARKERS.flatMap((b) =>
+    const links = missingBiomarkers.flatMap((b) =>
       b.categories.map((slug) => {
         const categoryId = categoryIds.get(slug);
         if (!categoryId) throw new Error(`${b.slug}: unknown category "${slug}"`);
         return { biomarkerId: biomarkerIds.get(b.slug)!, categoryId };
       }),
     );
-    const newLinks = await tx
-      .insert(biomarkerCategories)
-      .values(links)
-      .onConflictDoNothing()
-      .returning({ id: biomarkerCategories.biomarkerId });
+    const newLinks = links.length
+      ? await tx
+          .insert(biomarkerCategories)
+          .values(links)
+          .onConflictDoNothing()
+          .returning({ id: biomarkerCategories.biomarkerId })
+      : [];
 
     const aliases = BIOMARKERS.flatMap((b) => {
       const biomarkerId = biomarkerIds.get(b.slug)!;

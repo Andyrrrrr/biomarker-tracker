@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 const TABS = [
   { href: "/manage/biomarkers", label: "Biomarkers" },
+  { href: "/manage/categories", label: "Categories" },
   { href: "/manage/reports", label: "Reports" },
   { href: "/manage/sharing", label: "Sharing" },
 ];

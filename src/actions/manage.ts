@@ -7,11 +7,15 @@ import { getDb } from "@/db";
 import {
   addManualReport,
   addResults,
+  deleteCategory,
   deleteReport,
   deleteResult,
   editResult,
   EditError,
   mergeBiomarkers,
+  reorderBiomarkers,
+  reorderCategories,
+  saveCategory,
   saveBiomarker,
   updateReport,
 } from "@/ingest/edits";
@@ -19,6 +23,7 @@ import { requireOwner } from "@/lib/auth";
 import {
   addResultsForm,
   biomarkerForm,
+  categoryForm,
   fieldErrors,
   manualReportForm,
   readForm,
@@ -58,6 +63,25 @@ export async function saveBiomarkerAction(target: string | null, formData: FormD
   if (!current) redirect(`/manage/biomarkers/${saved.value}`);
   refresh();
   return { ok: true, message: "Saved." };
+}
+
+export async function saveCategoryAction(target: string | null, formData: FormData): Promise<FormState> {
+  await requireOwner();
+  const current = slug.nullable().parse(target);
+  const parsed = categoryForm.safeParse(readForm(formData));
+  if (!parsed.success) return invalid(parsed.error);
+  const saved = await attempt(() => saveCategory(getDb(), current, parsed.data));
+  if ("state" in saved) return saved.state;
+  if (!current) redirect(`/manage/categories/${saved.value}`);
+  refresh();
+  return { ok: true, message: "Saved." };
+}
+
+export async function deleteCategoryAction(category: string): Promise<FormState> {
+  await requireOwner();
+  const deleted = await attempt(() => deleteCategory(getDb(), slug.parse(category)));
+  if ("state" in deleted) return deleted.state;
+  redirect("/manage/categories");
 }
 
 export async function mergeBiomarkerAction(from: string, into: string): Promise<FormState> {
@@ -114,6 +138,24 @@ export async function editResultAction(resultId: number, formData: FormData): Pr
 export async function deleteResultAction(resultId: number): Promise<FormState> {
   await requireOwner();
   await deleteResult(getDb(), id.parse(resultId));
+  refresh();
+  return { ok: true };
+}
+
+const slugs = z.array(slug).max(1000);
+
+export async function reorderCategoriesAction(order: string[]): Promise<FormState> {
+  await requireOwner();
+  const saved = await attempt(() => reorderCategories(getDb(), slugs.parse(order)));
+  if ("state" in saved) return saved.state;
+  refresh();
+  return { ok: true };
+}
+
+export async function reorderBiomarkersAction(category: string, order: string[]): Promise<FormState> {
+  await requireOwner();
+  const saved = await attempt(() => reorderBiomarkers(getDb(), slug.parse(category), slugs.parse(order)));
+  if ("state" in saved) return saved.state;
   refresh();
   return { ok: true };
 }

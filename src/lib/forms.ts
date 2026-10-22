@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { reportSource } from "@/db/schema";
+import { isCategoryIcon } from "./category-icons";
 
 // Parsing for the edit forms in src/app/manage/. Every field arrives from FormData as a string;
 // these schemas turn blanks into null, check numbers and return messages keyed by field name, so
@@ -157,6 +158,14 @@ export const biomarkerForm = z
   }));
 
 export type BiomarkerInput = z.output<typeof biomarkerForm>;
+
+export const categoryForm = z.object({
+  name: required("Enter a name"),
+  description: text,
+  icon: z.string({ error: "Pick an icon" }).refine(isCategoryIcon, "Pick an icon"),
+});
+
+export type CategoryInput = z.output<typeof categoryForm>;
 
 export const reportForm = z.object({
   collectedOn: date,

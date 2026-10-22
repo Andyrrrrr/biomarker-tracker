@@ -48,8 +48,10 @@ otherwise sharpen the doc rule that should have caught it rather than adding one
 
 ## Non-negotiables
 
-- **No personal health data in git.** `data/` (source PDFs) and `imports/` (staging files) stay
-  gitignored; `src/db/seed/` holds biomarker definitions only. The repo may go public.
+- **No personal health data in git or on GitHub.** The repo is public. `data/` (source PDFs) and
+  `imports/` (staging files) stay gitignored; `src/db/seed/` holds biomarker definitions only.
+  Branch names, commit messages, code comments, PRs and issues describe the code change, never
+  Andy's results: no draw dates, values, tests he took or which lab/report prompted it.
 - **Results enter the database only through `applyImport`** (`npm run ingest`, or the app's
   forms via `src/ingest/edits.ts`). Name matching, unit conversion, dedupe and source precedence
   live there; hand-written SQL skips all of it.
