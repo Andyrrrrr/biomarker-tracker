@@ -1,4 +1,4 @@
-import { inArray } from "drizzle-orm";
+import { inArray, max } from "drizzle-orm";
 import type { Db } from "@/db";
 import { biomarkerAliases, biomarkerCategories, biomarkers, categories } from "@/db/schema";
 import { normalizeName } from "@/lib/names";
@@ -8,30 +8,42 @@ import { BIOMARKERS, CATEGORIES } from "./catalog";
 // edits made in the database survive re-seeding.
 export async function seedCatalog(db: Db) {
   return db.transaction(async (tx) => {
-    const newCategories = await tx
-      .insert(categories)
-      .values(CATEGORIES.map((c, i) => ({ ...c, sortOrder: i })))
-      .onConflictDoNothing()
-      .returning({ id: categories.id });
+    // New rows go after everything already there, in catalog order. Order is edited in the app
+    // (manage → Categories), so the catalog's order only counts on an empty database.
+    const haveCategories = new Set((await tx.select({ slug: categories.slug }).from(categories)).map((c) => c.slug));
+    const [{ lastCategory }] = await tx.select({ lastCategory: max(categories.sortOrder) }).from(categories);
+    const missingCategories = CATEGORIES.filter((c) => !haveCategories.has(c.slug));
+    const newCategories = missingCategories.length
+      ? await tx
+          .insert(categories)
+          .values(missingCategories.map((c, i) => ({ ...c, sortOrder: (lastCategory ?? -1) + 1 + i })))
+          .onConflictDoNothing()
+          .returning({ id: categories.id })
+      : [];
 
-    const newBiomarkers = await tx
-      .insert(biomarkers)
-      .values(
-        BIOMARKERS.map((b, i) => ({
-          slug: b.slug,
-          name: b.name,
-          shortName: b.shortName,
-          description: b.description,
-          resultType: b.qualitative ? ("qualitative" as const) : ("numeric" as const),
-          unit: b.unit,
-          rangeLow: b.low,
-          rangeHigh: b.high,
-          normalValues: b.normal,
-          sortOrder: i,
-        })),
-      )
-      .onConflictDoNothing()
-      .returning({ id: biomarkers.id });
+    const haveBiomarkers = new Set((await tx.select({ slug: biomarkers.slug }).from(biomarkers)).map((b) => b.slug));
+    const [{ lastBiomarker }] = await tx.select({ lastBiomarker: max(biomarkers.sortOrder) }).from(biomarkers);
+    const missingBiomarkers = BIOMARKERS.filter((b) => !haveBiomarkers.has(b.slug));
+    const newBiomarkers = missingBiomarkers.length
+      ? await tx
+          .insert(biomarkers)
+          .values(
+            missingBiomarkers.map((b, i) => ({
+              slug: b.slug,
+              name: b.name,
+              shortName: b.shortName,
+              description: b.description,
+              resultType: b.qualitative ? ("qualitative" as const) : ("numeric" as const),
+              unit: b.unit,
+              rangeLow: b.low,
+              rangeHigh: b.high,
+              normalValues: b.normal,
+              sortOrder: (lastBiomarker ?? -1) + 1 + i,
+            })),
+          )
+          .onConflictDoNothing()
+          .returning({ id: biomarkers.id })
+      : [];
 
     const categoryIds = new Map(
       (await tx.select({ id: categories.id, slug: categories.slug }).from(categories)).map((c) => [

@@ -32,6 +32,7 @@ knowing why it was made. Record the reasoning, not the diff; git already has the
 
 | Date | Decision | Status |
 | ---- | -------- | ------ |
+| 2026-10-21 | [Category and biomarker order lives in the database, set by dragging in the app](2026-10-21-order-lives-in-the-database.md) | Current |
 | 2026-10-17 | [Exports are a server-generated PDF and a CSV, both a biomarker-by-date grid](2026-10-17-export-pdf-and-csv.md) | Current |
 | 2026-10-17 | [One owner signs in by email link; doctors get unguessable share links](2026-10-17-share-links-and-owner-sign-in.md) | Current |
 | 2026-10-16 | [Hand edits go through the ingest code](2026-10-16-hand-edits-reimport.md) | Current; its `next dev` switch superseded by 2026-10-17 |

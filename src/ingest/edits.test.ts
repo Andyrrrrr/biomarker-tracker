@@ -1,7 +1,8 @@
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "@/db";
-import { biomarkerAliases, biomarkers, reports, results } from "@/db/schema";
+import { biomarkerAliases, biomarkerCategories, biomarkers, categories, reports, results } from "@/db/schema";
+import { seedCatalog } from "@/db/seed/seed";
 import { biomarkerForm, manualReportForm, resultForm } from "@/lib/forms";
 import { testDb } from "@/test/db";
 import { applyImport } from "./apply";
@@ -12,6 +13,8 @@ import {
   editResult,
   EditError,
   mergeBiomarkers,
+  reorderBiomarkers,
+  reorderCategories,
   saveBiomarker,
   updateReport,
 } from "./edits";
@@ -332,4 +335,57 @@ describe("hand edits", () => {
       expect(e.message).toContain("same kind");
     });
   });
+
+  describe("ordering", () => {
+    const categoryOrder = async () =>
+      (await db.select({ slug: categories.slug }).from(categories).orderBy(asc(categories.sortOrder))).map((c) => c.slug);
+    const biomarkerOrder = async () =>
+      (await db.select({ slug: biomarkers.slug }).from(biomarkers).orderBy(asc(biomarkers.sortOrder))).map((b) => b.slug);
+    const membersOf = async (category: string) => {
+      const members = new Set(
+        (
+          await db
+            .select({ slug: biomarkers.slug })
+            .from(biomarkers)
+            .innerJoin(biomarkerCategories, eq(biomarkerCategories.biomarkerId, biomarkers.id))
+            .innerJoin(categories, eq(biomarkerCategories.categoryId, categories.id))
+            .where(eq(categories.slug, category))
+        ).map((b) => b.slug),
+      );
+      return (await biomarkerOrder()).filter((s) => members.has(s));
+    };
+
+    it("saves a new category order", async () => {
+      const order = (await categoryOrder()).reverse();
+      await reorderCategories(db, order);
+      expect(await categoryOrder()).toEqual(order);
+    });
+
+    it("refuses a category order that's missing one", async () => {
+      const order = await categoryOrder();
+      expect((await editError(reorderCategories(db, order.slice(1)))).message).toMatch(/changed/);
+    });
+
+    it("reorders one category's biomarkers without moving the rest", async () => {
+      const before = await biomarkerOrder();
+      const thyroid = await membersOf("thyroid");
+      const others = before.filter((s) => !thyroid.includes(s));
+      await reorderBiomarkers(db, "thyroid", [...thyroid].reverse());
+      expect(await membersOf("thyroid")).toEqual([...thyroid].reverse());
+      expect((await biomarkerOrder()).filter((s) => !thyroid.includes(s))).toEqual(others);
+    });
+
+    it("refuses a biomarker order from another category", async () => {
+      expect((await editError(reorderBiomarkers(db, "thyroid", ["hemoglobin"]))).message).toMatch(/changed/);
+    });
+
+    it("seeds missing catalog entries after the existing order", async () => {
+      await db.delete(biomarkers).where(eq(biomarkers.slug, "tsh"));
+      await db.delete(categories).where(eq(categories.slug, "autoimmunity"));
+      await seedCatalog(db);
+      expect((await categoryOrder()).at(-1)).toBe("autoimmunity");
+      expect((await biomarkerOrder()).at(-1)).toBe("tsh");
+    });
+  });
 });
+

@@ -1,4 +1,4 @@
-import { asc, count, desc, eq } from "drizzle-orm";
+import { asc, count, desc, eq, inArray } from "drizzle-orm";
 import { connection } from "next/server";
 import { getDb } from "@/db";
 import {
@@ -14,6 +14,7 @@ import {
 } from "@/db/schema";
 import { findActiveShareLink, listShareLinks, recordShareOpen } from "@/sharing/links";
 import { requireOwner } from "./auth";
+import { compareByCategory } from "./order";
 import { getStatus, statusGroup } from "./status";
 import type { CategorySummary, MarkerSummary, Point } from "./types";
 
@@ -47,7 +48,7 @@ async function loadAll(): Promise<Dashboard> {
   await connection();
   const db = getDb();
   const [allCategories, allBiomarkers, links, rows] = await Promise.all([
-    db.select().from(categories).orderBy(asc(categories.sortOrder)),
+    db.select().from(categories).orderBy(asc(categories.sortOrder), asc(categories.id)),
     db.select().from(biomarkers),
     db.select().from(biomarkerCategories),
     db
@@ -161,7 +162,7 @@ export async function loadBiomarkerList() {
   const [all, links, allCategories, counts] = await Promise.all([
     db.select().from(biomarkers).orderBy(asc(biomarkers.name)),
     db.select().from(biomarkerCategories),
-    db.select().from(categories).orderBy(asc(categories.sortOrder)),
+    db.select().from(categories).orderBy(asc(categories.sortOrder), asc(categories.id)),
     db
       .select({ biomarkerId: results.biomarkerId, results: count() })
       .from(results)
@@ -179,7 +180,39 @@ export async function loadBiomarkerList() {
 export async function loadCategories() {
   await requireOwner();
   await connection();
-  return getDb().select().from(categories).orderBy(asc(categories.sortOrder));
+  return getDb().select().from(categories).orderBy(asc(categories.sortOrder), asc(categories.id));
+}
+
+// Every category in display order, with how many biomarkers each holds.
+export async function loadCategoryList() {
+  await requireOwner();
+  await connection();
+  const db = getDb();
+  const [all, counts] = await Promise.all([
+    db.select().from(categories).orderBy(asc(categories.sortOrder), asc(categories.id)),
+    db
+      .select({ categoryId: biomarkerCategories.categoryId, biomarkers: count() })
+      .from(biomarkerCategories)
+      .groupBy(biomarkerCategories.categoryId),
+  ]);
+  const byCategory = new Map(counts.map((c) => [c.categoryId, c.biomarkers]));
+  return all.map((c) => ({ ...pickCategory(c), biomarkers: byCategory.get(c.id) ?? 0 }));
+}
+
+// One category and its biomarkers in report order.
+export async function loadCategoryOrder(slug: string) {
+  await requireOwner();
+  await connection();
+  const db = getDb();
+  const [category] = await db.select().from(categories).where(eq(categories.slug, slug));
+  if (!category) return null;
+  const members = await db
+    .select({ slug: biomarkers.slug, name: biomarkers.name })
+    .from(biomarkers)
+    .innerJoin(biomarkerCategories, eq(biomarkerCategories.biomarkerId, biomarkers.id))
+    .where(eq(biomarkerCategories.categoryId, category.id))
+    .orderBy(asc(biomarkers.sortOrder), asc(biomarkers.id));
+  return { category: pickCategory(category), biomarkers: members };
 }
 
 // One biomarker with what its edit form shows.
@@ -236,19 +269,32 @@ export async function loadReports() {
     .orderBy(desc(reports.collectedOn), desc(reports.id));
 }
 
-// One report and its results, in catalog order.
+// One report and its results, by category and then the order set in manage → Categories.
 export async function loadReport(id: number) {
   await requireOwner();
   await connection();
   const db = getDb();
   const [report] = await db.select().from(reports).where(eq(reports.id, id));
   if (!report) return null;
-  const rows = await db
+  const found = await db
     .select({ result: results, biomarker: biomarkers })
     .from(results)
     .innerJoin(biomarkers, eq(results.biomarkerId, biomarkers.id))
-    .where(eq(results.reportId, id))
-    .orderBy(asc(biomarkers.sortOrder));
+    .where(eq(results.reportId, id));
+  const links = found.length
+    ? await db
+        .select({ biomarkerId: biomarkerCategories.biomarkerId, sortOrder: categories.sortOrder })
+        .from(biomarkerCategories)
+        .innerJoin(categories, eq(biomarkerCategories.categoryId, categories.id))
+        .where(inArray(biomarkerCategories.biomarkerId, found.map((r) => r.biomarker.id)))
+    : [];
+  const categoryOrder = new Map<number, number>();
+  for (const l of links) {
+    categoryOrder.set(l.biomarkerId, Math.min(categoryOrder.get(l.biomarkerId) ?? l.sortOrder, l.sortOrder));
+  }
+  const rows = found
+    .map((r) => ({ ...r, categoryOrder: categoryOrder.get(r.biomarker.id) ?? Number.MAX_SAFE_INTEGER }))
+    .sort((a, b) => compareByCategory({ ...a.biomarker, categoryOrder: a.categoryOrder }, { ...b.biomarker, categoryOrder: b.categoryOrder }));
   return {
     report,
     results: rows.map(({ result, biomarker: b }) => ({

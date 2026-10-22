@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, max, ne, type SQL } from "drizzle-orm";
+import { and, asc, eq, inArray, max, ne, sql, type SQL } from "drizzle-orm";
 import type { Db } from "@/db";
 import {
   biomarkerAliases,
@@ -22,6 +22,7 @@ import {
   type TypedResultInput,
 } from "@/lib/forms";
 import { normalizeName } from "@/lib/names";
+import { reorderWithin } from "@/lib/order";
 import { SOURCE_LABEL } from "@/lib/sources";
 import { sameUnit } from "@/lib/units";
 import { applyImport, BlockedImportError } from "./apply";
@@ -339,6 +340,44 @@ function asPrinted(r: ResultInput) {
     calculated: r.calculated,
     notes: r.notes,
   };
+}
+
+// Drag-to-reorder (src/app/(owner)/manage/categories/). Both write every row's position, 0 to n,
+// so a reorder also clears ties left by older seeds.
+export async function reorderCategories(db: Db, slugs: string[]) {
+  await db.transaction(async (tx) => {
+    const all = await tx.select({ slug: categories.slug }).from(categories).orderBy(asc(categories.sortOrder), asc(categories.id));
+    const known = new Set(all.map((c) => c.slug));
+    const order = [...new Set(slugs.filter((s) => known.has(s)))];
+    if (order.length !== all.length) throw new EditError("The categories changed. Reload and try again.");
+    await tx.update(categories).set({ sortOrder: positions(categories.slug, order) }).where(inArray(categories.slug, order));
+  });
+}
+
+// `slugs` is one category's biomarkers in their new order; they swap among the places they hold,
+// so other categories keep their order.
+export async function reorderBiomarkers(db: Db, categorySlug: string, slugs: string[]) {
+  await db.transaction(async (tx) => {
+    const members = await tx
+      .select({ slug: biomarkers.slug })
+      .from(biomarkers)
+      .innerJoin(biomarkerCategories, eq(biomarkerCategories.biomarkerId, biomarkers.id))
+      .innerJoin(categories, eq(biomarkerCategories.categoryId, categories.id))
+      .where(eq(categories.slug, categorySlug));
+    const current = new Set(members.map((m) => m.slug));
+    const order = [...new Set(slugs)];
+    if (order.length !== current.size || !order.every((s) => current.has(s))) {
+      throw new EditError("This category changed. Reload and try again.");
+    }
+    const all = await tx.select({ slug: biomarkers.slug }).from(biomarkers).orderBy(asc(biomarkers.sortOrder), asc(biomarkers.id));
+    const next = reorderWithin(all.map((b) => b.slug), order);
+    await tx.update(biomarkers).set({ sortOrder: positions(biomarkers.slug, next) }).where(inArray(biomarkers.slug, next));
+  });
+}
+
+// A CASE expression giving each slug its index, so a whole list is written in one statement.
+function positions(column: typeof categories.slug | typeof biomarkers.slug, order: string[]) {
+  return sql<number>`case ${column} ${sql.join(order.map((s, i) => sql`when ${s} then ${i}::integer`), sql` `)} end`;
 }
 
 // One sentence per blocker, for a person rather than the CLI.

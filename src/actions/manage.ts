@@ -12,6 +12,8 @@ import {
   editResult,
   EditError,
   mergeBiomarkers,
+  reorderBiomarkers,
+  reorderCategories,
   saveBiomarker,
   updateReport,
 } from "@/ingest/edits";
@@ -114,6 +116,24 @@ export async function editResultAction(resultId: number, formData: FormData): Pr
 export async function deleteResultAction(resultId: number): Promise<FormState> {
   await requireOwner();
   await deleteResult(getDb(), id.parse(resultId));
+  refresh();
+  return { ok: true };
+}
+
+const slugs = z.array(slug).max(1000);
+
+export async function reorderCategoriesAction(order: string[]): Promise<FormState> {
+  await requireOwner();
+  const saved = await attempt(() => reorderCategories(getDb(), slugs.parse(order)));
+  if ("state" in saved) return saved.state;
+  refresh();
+  return { ok: true };
+}
+
+export async function reorderBiomarkersAction(category: string, order: string[]): Promise<FormState> {
+  await requireOwner();
+  const saved = await attempt(() => reorderBiomarkers(getDb(), slug.parse(category), slugs.parse(order)));
+  if ("state" in saved) return saved.state;
   refresh();
   return { ok: true };
 }
