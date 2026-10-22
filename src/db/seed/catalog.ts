@@ -1,7 +1,8 @@
 // Starting definitions for categories and biomarkers. Seeding only inserts what's missing
 // (src/db/seed/run.ts), so edits made later in the database are never overwritten.
 //
-// Categories follow Function Health's grouping. Descriptions are our own. Ranges are adult male
+// Categories follow Function Health's grouping; their order here only applies to an empty database
+// (reorder in the app: manage → Categories). Descriptions are our own. Ranges are adult male
 // reference ranges, mostly Quest's latest printed range; markers with no results yet use common
 // lab ranges and are worth checking against the first real report.
 //
@@ -129,6 +130,18 @@ export const CATEGORIES: CatalogCategory[] = [
     icon: "test-tube",
     description:
       "A urinalysis: what the urine's look and chemistry say about the kidneys and urinary tract.",
+  },
+  {
+    slug: "brain-health",
+    name: "Brain health",
+    icon: "brain",
+    description: "Inherited and measured markers linked to long-term brain and memory health.",
+  },
+  {
+    slug: "environmental-toxins",
+    name: "Environmental toxins",
+    icon: "biohazard",
+    description: "Heavy metals picked up from food, water and surroundings that build up in the body.",
   },
 ];
 
@@ -492,6 +505,46 @@ export const BIOMARKERS: CatalogBiomarker[] = [
     low: 44,
     high: 196,
     aliases: ["Creatine Kinase, Total", "Creatine kinase"],
+  },
+  {
+    slug: "ldl-peak-size",
+    name: "LDL Peak Size",
+    description: "The most common LDL particle size; smaller, denser particles reach artery walls more easily.",
+    categories: ["heart"],
+    unit: "Angstrom",
+    low: 222.9,
+  },
+  {
+    slug: "hdl-large",
+    name: "HDL Large",
+    description: "The count of large HDL particles, the kind best at clearing cholesterol away.",
+    categories: ["heart"],
+    unit: "nmol/L",
+    low: 6729,
+  },
+  {
+    slug: "ldl-medium",
+    name: "LDL Medium",
+    description: "The count of mid-sized LDL particles.",
+    categories: ["heart"],
+    unit: "nmol/L",
+    high: 215,
+  },
+  {
+    slug: "ldl-small",
+    name: "LDL Small",
+    description: "The count of small, dense LDL particles, the most likely to lodge in artery walls.",
+    categories: ["heart"],
+    unit: "nmol/L",
+    high: 142,
+  },
+  {
+    slug: "ldl-pattern",
+    name: "LDL Pattern",
+    description: "Whether LDL particles are mostly large (A) or mostly small and dense (B).",
+    categories: ["heart"],
+    qualitative: true,
+    normal: ["A"],
   },
 
   // Immune Regulation
@@ -917,6 +970,15 @@ export const BIOMARKERS: CatalogBiomarker[] = [
     low: 4,
     high: 8,
   },
+  {
+    slug: "leptin",
+    name: "Leptin",
+    description: "A hormone from fat tissue that signals fullness; it tends to rise with body fat.",
+    categories: ["metabolic"],
+    unit: "ng/mL",
+    low: 0.3,
+    high: 13.4,
+  },
 
   // Nutrients
   {
@@ -1016,6 +1078,101 @@ export const BIOMARKERS: CatalogBiomarker[] = [
     high: 6.4,
     aliases: ["RBC Magnesium"],
   },
+  {
+    slug: "mma",
+    name: "Methylmalonic Acid (MMA)",
+    shortName: "MMA",
+    description: "Builds up when the body runs short of B12, often before blood B12 itself drops.",
+    categories: ["nutrients"],
+    unit: "nmol/L",
+    low: 55,
+    high: 335,
+  },
+  {
+    slug: "omega-3-total",
+    name: "Omega-3 Total",
+    description: "The share of fats in red cell membranes that are omega-3s (EPA, DPA and DHA).",
+    categories: ["nutrients"],
+    unit: "% by wt",
+    low: 5.4,
+    aliases: ["Omega-3 Total / OmegaCheck", "OmegaCheck"],
+  },
+  {
+    slug: "omega-3-epa",
+    name: "Omega-3: EPA",
+    shortName: "EPA",
+    description: "An omega-3 from fish and algae with anti-inflammatory effects.",
+    categories: ["nutrients"],
+    unit: "% by wt",
+    low: 0.2,
+    high: 2.3,
+  },
+  {
+    slug: "omega-3-dpa",
+    name: "Omega-3: DPA",
+    shortName: "DPA",
+    description: "An omega-3 that sits between EPA and DHA as the body converts one to the other.",
+    categories: ["nutrients"],
+    unit: "% by wt",
+    low: 0.8,
+    high: 1.8,
+  },
+  {
+    slug: "omega-3-dha",
+    name: "Omega-3: DHA",
+    shortName: "DHA",
+    description: "An omega-3 concentrated in the brain and eyes.",
+    categories: ["nutrients"],
+    unit: "% by wt",
+    low: 1.4,
+    high: 5.1,
+  },
+  {
+    slug: "omega-6-total",
+    name: "Omega-6 Total",
+    description: "The share of fats in red cell membranes that are omega-6s.",
+    categories: ["nutrients"],
+    unit: "% by wt",
+    low: 28.2,
+    high: 38.9,
+  },
+  {
+    slug: "omega-6-arachidonic-acid",
+    name: "Omega-6: Arachidonic Acid",
+    shortName: "Arachidonic Acid",
+    description: "An omega-6 the body turns into signals that drive inflammation.",
+    categories: ["nutrients"],
+    unit: "% by wt",
+    low: 8.6,
+    high: 15.6,
+  },
+  {
+    slug: "omega-6-linoleic-acid",
+    name: "Omega-6: Linoleic Acid",
+    shortName: "Linoleic Acid",
+    description: "The main omega-6 in the diet, from seed oils, nuts and grains.",
+    categories: ["nutrients"],
+    unit: "% by wt",
+    low: 18.6,
+    high: 29.5,
+  },
+  {
+    slug: "omega-6-3-ratio",
+    name: "Omega 6 / 3 Ratio",
+    description: "How omega-6 fats compare with omega-3s; lower means more omega-3 relative to omega-6.",
+    categories: ["nutrients"],
+    low: 3.7,
+    high: 14.4,
+  },
+  {
+    slug: "aa-epa-ratio",
+    name: "Arachidonic Acid/EPA Ratio",
+    shortName: "AA/EPA Ratio",
+    description: "Arachidonic acid compared with EPA, a rough balance of inflammatory and calming fats.",
+    categories: ["nutrients"],
+    low: 3.7,
+    high: 40.7,
+  },
 
   // Pancreas
   {
@@ -1079,6 +1236,24 @@ export const BIOMARKERS: CatalogBiomarker[] = [
     unit: "pg/mL",
     low: 2.3,
     high: 4.2,
+  },
+  {
+    slug: "tpo-antibodies",
+    name: "Thyroid Peroxidase Antibodies (TPO)",
+    shortName: "TPO Antibodies",
+    description: "Antibodies against an enzyme the thyroid needs; the usual sign of autoimmune thyroid disease.",
+    categories: ["thyroid"],
+    unit: "IU/mL",
+    high: 9,
+  },
+  {
+    slug: "thyroglobulin-antibodies",
+    name: "Thyroglobulin Antibodies (TgAb)",
+    shortName: "TgAb",
+    description: "Antibodies against the protein the thyroid builds its hormones from.",
+    categories: ["thyroid"],
+    unit: "IU/mL",
+    high: 1,
   },
 
   // Urine
@@ -1209,5 +1384,26 @@ export const BIOMARKERS: CatalogBiomarker[] = [
     categories: ["urine"],
     low: 5,
     high: 8,
+  },
+
+  // Brain health
+  {
+    slug: "apoe-genotype",
+    name: "ApoE Genotype",
+    shortName: "ApoE",
+    description: "Which two versions of the ApoE gene you carry; the e4 version raises Alzheimer's risk.",
+    categories: ["brain-health"],
+    qualitative: true,
+  },
+
+  // Environmental toxins
+  {
+    slug: "mercury",
+    name: "Mercury",
+    description: "Mercury in the blood, mostly from eating large predatory fish.",
+    categories: ["environmental-toxins"],
+    unit: "mcg/L",
+    high: 10,
+    aliases: ["Mercury, Blood"],
   },
 ];
