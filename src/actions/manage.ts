@@ -7,6 +7,7 @@ import { getDb } from "@/db";
 import {
   addManualReport,
   addResults,
+  deleteCategory,
   deleteReport,
   deleteResult,
   editResult,
@@ -74,6 +75,13 @@ export async function saveCategoryAction(target: string | null, formData: FormDa
   if (!current) redirect(`/manage/categories/${saved.value}`);
   refresh();
   return { ok: true, message: "Saved." };
+}
+
+export async function deleteCategoryAction(category: string): Promise<FormState> {
+  await requireOwner();
+  const deleted = await attempt(() => deleteCategory(getDb(), slug.parse(category)));
+  if ("state" in deleted) return deleted.state;
+  redirect("/manage/categories");
 }
 
 export async function mergeBiomarkerAction(from: string, into: string): Promise<FormState> {

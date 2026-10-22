@@ -9,6 +9,7 @@ import { applyImport } from "./apply";
 import {
   addManualReport,
   addResults,
+  deleteCategory,
   deleteReport,
   editResult,
   EditError,
@@ -387,6 +388,14 @@ describe("hand edits", () => {
       await saveCategory(db, slug, categoryForm.parse({ name: "Bones", description: "Density", icon: "dna" }));
       const [saved] = await db.select().from(categories).where(eq(categories.slug, slug));
       expect(saved).toMatchObject({ name: "Bones", description: "Density", icon: "dna" });
+    });
+
+    it("deletes an empty category and refuses one with biomarkers", async () => {
+      expect((await editError(deleteCategory(db, "thyroid"))).message).toMatch(/out before deleting/);
+      expect(await categoryOrder()).toContain("thyroid");
+      const slug = await saveCategory(db, null, categoryForm.parse({ name: "Empty", icon: "leaf" }));
+      await deleteCategory(db, slug);
+      expect(await categoryOrder()).not.toContain(slug);
     });
 
     it("refuses an icon that isn't on the list", () => {

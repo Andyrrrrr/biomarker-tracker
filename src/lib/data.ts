@@ -206,13 +206,21 @@ export async function loadCategoryOrder(slug: string) {
   const db = getDb();
   const [category] = await db.select().from(categories).where(eq(categories.slug, slug));
   if (!category) return null;
-  const members = await db
-    .select({ slug: biomarkers.slug, name: biomarkers.name })
-    .from(biomarkers)
-    .innerJoin(biomarkerCategories, eq(biomarkerCategories.biomarkerId, biomarkers.id))
-    .where(eq(biomarkerCategories.categoryId, category.id))
-    .orderBy(asc(biomarkers.sortOrder), asc(biomarkers.id));
-  return { category: pickCategory(category), biomarkers: members };
+  const [members, links] = await Promise.all([
+    db
+      .select({ id: biomarkers.id, slug: biomarkers.slug, name: biomarkers.name })
+      .from(biomarkers)
+      .innerJoin(biomarkerCategories, eq(biomarkerCategories.biomarkerId, biomarkers.id))
+      .where(eq(biomarkerCategories.categoryId, category.id))
+      .orderBy(asc(biomarkers.sortOrder), asc(biomarkers.id)),
+    db.select({ biomarkerId: biomarkerCategories.biomarkerId }).from(biomarkerCategories),
+  ]);
+  const categoryCount = (id: number) => links.filter((l) => l.biomarkerId === id).length;
+  return {
+    category: pickCategory(category),
+    // `onlyHere`: this is the biomarker's only category, so it needs another before leaving.
+    biomarkers: members.map(({ id, ...b }) => ({ ...b, onlyHere: categoryCount(id) === 1 })),
+  };
 }
 
 // One biomarker with what its edit form shows.

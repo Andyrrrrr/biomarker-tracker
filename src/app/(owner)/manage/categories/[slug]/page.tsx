@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { reorderBiomarkersAction } from "@/actions/manage";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { CategoryForm } from "@/components/manage/category-form";
+import { DeleteCategoryButton } from "@/components/manage/delete-category-button";
 import { SortableList } from "@/components/manage/sortable-list";
 import { loadCategoryOrder } from "@/lib/data";
 
@@ -22,7 +23,10 @@ async function EditCategory({ params }: Pick<PageProps<"/manage/categories/[slug
   return (
     <>
       <Breadcrumbs className="pt-8" items={[{ href: "/manage/categories", label: "Categories" }, { label: data.category.name }]} />
-      <h1 className="pt-2 pb-6 text-3xl font-semibold tracking-tight">{data.category.name}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-4 pt-2 pb-6">
+        <h1 className="text-3xl font-semibold tracking-tight">{data.category.name}</h1>
+        <DeleteCategoryButton category={data.category} biomarkers={data.biomarkers} />
+      </div>
       <CategoryForm category={data.category} />
       <section className="mt-12 max-w-2xl">
         <h2 className="text-lg font-semibold">Biomarker order</h2>

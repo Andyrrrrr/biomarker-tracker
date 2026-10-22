@@ -361,6 +361,18 @@ export async function saveCategory(db: Db, current: string | null, input: Catego
   });
 }
 
+// Only an empty category can go: deleting one cascades to its biomarker links, which would
+// silently leave biomarkers with fewer categories (or none).
+export async function deleteCategory(db: Db, slug: string) {
+  await db.transaction(async (tx) => {
+    const [category] = await tx.select({ id: categories.id }).from(categories).where(eq(categories.slug, slug));
+    if (!category) return;
+    const members = await tx.select().from(biomarkerCategories).where(eq(biomarkerCategories.categoryId, category.id));
+    if (members.length) throw new EditError("Move this category's biomarkers out before deleting it.");
+    await tx.delete(categories).where(eq(categories.id, category.id));
+  });
+}
+
 // Drag-to-reorder (src/app/(owner)/manage/categories/). Both write every row's position, 0 to n,
 // so a reorder also clears ties left by older seeds.
 export async function reorderCategories(db: Db, slugs: string[]) {
