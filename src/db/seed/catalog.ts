@@ -1,5 +1,5 @@
-// Starting definitions for categories and biomarkers. Seeding only inserts what's missing
-// (src/db/seed/run.ts), so edits made later in the database are never overwritten.
+// Starting definitions for categories and biomarkers. Seeding adds new entries and never
+// overwrites or restores what was edited or removed in the app; src/db/seed/seed.ts has the rules.
 //
 // Categories follow Function Health's grouping; their order here only applies to an empty database
 // (reorder in the app: manage → Categories). Descriptions are our own. Ranges are adult male

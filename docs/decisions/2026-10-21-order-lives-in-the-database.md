@@ -11,7 +11,10 @@ live rows.
 Categories: categories on that page, each category's biomarkers on its own page
 (`src/components/manage/sortable-list.tsx`, writes in `src/ingest/edits.ts`). A save rewrites every
 position 0 to n. The seed only appends: new rows go after the highest existing position, in catalog
-order, so the catalog's order counts only on an empty database. The report page lists results by
+order, so the catalog's order counts only on an empty database. For the same reason (the app owns
+the data once it exists), the seed links categories only for biomarkers it just added and creates a
+category only when one of those needs it, so a category deleted or unlinked in the app stays that
+way (`src/db/seed/seed.ts`). The report page lists results by
 category, then by biomarker order within it (`src/lib/order.ts`).
 
 **Why.** Reordering is a display preference, so it belongs with the data rather than in code that

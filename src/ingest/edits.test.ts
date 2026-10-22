@@ -402,12 +402,23 @@ describe("hand edits", () => {
       expect(categoryForm.safeParse({ name: "X", icon: "not-an-icon" }).success).toBe(false);
     });
 
-    it("seeds missing catalog entries after the existing order", async () => {
-      await db.delete(biomarkers).where(eq(biomarkers.slug, "tsh"));
+    it("re-seeding leaves deleted categories and removed links gone", async () => {
+      await db.delete(categories).where(eq(categories.slug, "pancreas"));
+      const [ferritin] = await db.select().from(biomarkers).where(eq(biomarkers.slug, "ferritin"));
+      await db.delete(biomarkerCategories).where(eq(biomarkerCategories.biomarkerId, ferritin.id));
+      await seedCatalog(db);
+      expect(await categoryOrder()).not.toContain("pancreas");
+      expect(await db.select().from(biomarkerCategories).where(eq(biomarkerCategories.biomarkerId, ferritin.id))).toEqual([]);
+    });
+
+    it("seeds new biomarkers after the existing order, with their categories", async () => {
+      await db.delete(biomarkers).where(eq(biomarkers.slug, "ana-screen"));
+      await db.delete(biomarkers).where(eq(biomarkers.slug, "rheumatoid-factor"));
       await db.delete(categories).where(eq(categories.slug, "autoimmunity"));
       await seedCatalog(db);
+      expect((await biomarkerOrder()).slice(-2)).toEqual(["ana-screen", "rheumatoid-factor"]);
       expect((await categoryOrder()).at(-1)).toBe("autoimmunity");
-      expect((await biomarkerOrder()).at(-1)).toBe("tsh");
+      expect(await membersOf("autoimmunity")).toEqual(["ana-screen", "rheumatoid-factor"]);
     });
   });
 });
