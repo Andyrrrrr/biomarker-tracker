@@ -15,6 +15,7 @@ import {
   slugify,
   uniqueSlug,
   type BiomarkerInput,
+  type CategoryInput,
   type FieldErrors,
   type ManualReportInput,
   type ReportInput,
@@ -340,6 +341,24 @@ function asPrinted(r: ResultInput) {
     calculated: r.calculated,
     notes: r.notes,
   };
+}
+
+// Creates a category (no `current`) at the end of the order, or edits one. The slug is set once,
+// from the first name, so links and imports keep working after a rename. Returns the slug.
+export async function saveCategory(db: Db, current: string | null, input: CategoryInput) {
+  return db.transaction(async (tx) => {
+    const columns = { name: input.name, description: input.description, icon: input.icon };
+    if (current) {
+      const [updated] = await tx.update(categories).set(columns).where(eq(categories.slug, current)).returning();
+      if (!updated) throw new EditError("That category no longer exists.");
+      return updated.slug;
+    }
+    const slugs = await tx.select({ slug: categories.slug }).from(categories);
+    const [{ last }] = await tx.select({ last: max(categories.sortOrder) }).from(categories);
+    const slug = uniqueSlug(slugify(input.name), slugs.map((s) => s.slug));
+    await tx.insert(categories).values({ ...columns, slug, sortOrder: (last ?? -1) + 1 });
+    return slug;
+  });
 }
 
 // Drag-to-reorder (src/app/(owner)/manage/categories/). Both write every row's position, 0 to n,

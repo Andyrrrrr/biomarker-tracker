@@ -14,6 +14,7 @@ import {
   mergeBiomarkers,
   reorderBiomarkers,
   reorderCategories,
+  saveCategory,
   saveBiomarker,
   updateReport,
 } from "@/ingest/edits";
@@ -21,6 +22,7 @@ import { requireOwner } from "@/lib/auth";
 import {
   addResultsForm,
   biomarkerForm,
+  categoryForm,
   fieldErrors,
   manualReportForm,
   readForm,
@@ -58,6 +60,18 @@ export async function saveBiomarkerAction(target: string | null, formData: FormD
   const saved = await attempt(() => saveBiomarker(getDb(), current, parsed.data));
   if ("state" in saved) return saved.state;
   if (!current) redirect(`/manage/biomarkers/${saved.value}`);
+  refresh();
+  return { ok: true, message: "Saved." };
+}
+
+export async function saveCategoryAction(target: string | null, formData: FormData): Promise<FormState> {
+  await requireOwner();
+  const current = slug.nullable().parse(target);
+  const parsed = categoryForm.safeParse(readForm(formData));
+  if (!parsed.success) return invalid(parsed.error);
+  const saved = await attempt(() => saveCategory(getDb(), current, parsed.data));
+  if ("state" in saved) return saved.state;
+  if (!current) redirect(`/manage/categories/${saved.value}`);
   refresh();
   return { ok: true, message: "Saved." };
 }

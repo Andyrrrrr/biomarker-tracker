@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "@/db";
 import { biomarkerAliases, biomarkerCategories, biomarkers, categories, reports, results } from "@/db/schema";
 import { seedCatalog } from "@/db/seed/seed";
-import { biomarkerForm, manualReportForm, resultForm } from "@/lib/forms";
+import { biomarkerForm, categoryForm, manualReportForm, resultForm } from "@/lib/forms";
 import { testDb } from "@/test/db";
 import { applyImport } from "./apply";
 import {
@@ -15,6 +15,7 @@ import {
   mergeBiomarkers,
   reorderBiomarkers,
   reorderCategories,
+  saveCategory,
   saveBiomarker,
   updateReport,
 } from "./edits";
@@ -377,6 +378,19 @@ describe("hand edits", () => {
 
     it("refuses a biomarker order from another category", async () => {
       expect((await editError(reorderBiomarkers(db, "thyroid", ["hemoglobin"]))).message).toMatch(/changed/);
+    });
+
+    it("adds a category at the end and edits it without changing its slug", async () => {
+      const slug = await saveCategory(db, null, categoryForm.parse({ name: "Bone health", icon: "bone" }));
+      expect(slug).toBe("bone-health");
+      expect((await categoryOrder()).at(-1)).toBe("bone-health");
+      await saveCategory(db, slug, categoryForm.parse({ name: "Bones", description: "Density", icon: "dna" }));
+      const [saved] = await db.select().from(categories).where(eq(categories.slug, slug));
+      expect(saved).toMatchObject({ name: "Bones", description: "Density", icon: "dna" });
+    });
+
+    it("refuses an icon that isn't on the list", () => {
+      expect(categoryForm.safeParse({ name: "X", icon: "not-an-icon" }).success).toBe(false);
     });
 
     it("seeds missing catalog entries after the existing order", async () => {
