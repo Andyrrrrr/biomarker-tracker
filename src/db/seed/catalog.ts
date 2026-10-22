@@ -539,6 +539,17 @@ export const BIOMARKERS: CatalogBiomarker[] = [
     high: 142,
   },
   {
+    slug: "ldl-particle-number-ion-mobility",
+    name: "LDL Particle Number (Ion Mobility)",
+    shortName: "LDL-P (ion mobility)",
+    description: "The number of LDL particles, counted by ion mobility; reads differently from the NMR test.",
+    categories: ["heart"],
+    unit: "nmol/L",
+    high: 1138,
+    // Quest's ion-mobility panel prints the plain name; its NMR panel prints "LDL P".
+    aliases: ["LDL Particle Number"],
+  },
+  {
     slug: "ldl-pattern",
     name: "LDL Pattern",
     description: "Whether LDL particles are mostly large (A) or mostly small and dense (B).",
