@@ -17,7 +17,7 @@ so a refusal rolls everything back. Deleting a result or report, and editing a r
 biomarker's own details, write directly: they don't create or change a result's value.
 
 The manage pages and every Server Action are switched off unless `NODE_ENV` is `development`
-(`src/lib/editing.ts`).
+(an `assertEditing` guard, removed when sign-in replaced it).
 
 **Why.** Re-importing means a typed value is parsed, unit-converted and ranked against other
 sources the same way as a lab file, and a merge or unit change converts from what the lab printed
