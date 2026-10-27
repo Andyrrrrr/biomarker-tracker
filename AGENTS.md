@@ -14,20 +14,25 @@ If `AGENTS.local.md` exists at the repo root, read and follow it (gitignored, pe
    didn't name. Detail for one kind of task goes in a topic doc, with a pointer in the map.
 2. **One home per fact**; link to it everywhere else. The code is a home too: name the file rather
    than copying its lists, options or UI copy.
-3. **Replace, don't append.** Every session adds and none removes, so when behavior changes,
+3. **A doc is sized to be read whole.** The map routes at file granularity, so a doc sessions only
+   ever need part of is really two docs — or a folder with an index `README.md`, the shape
+   `docs/decisions/` has. Grab-bags (conventions, integrations) hit this first; a doc genuinely
+   read end to end stays one file.
+4. **Replace, don't append.** Every session adds and none removes, so when behavior changes,
    rewrite the paragraph and delete what's no longer true.
-4. **Rule, why, pointer.** Investigation stories, measurements, logs and false trails go in the
+5. **Rule, why, pointer.** Investigation stories, measurements, logs and false trails go in the
    issue or commit message. The doc gets the rule, one line of why and the issue number; keep a
    figure only if someone needs it to act. The project's docs check holds each doc to a size
    budget; one over budget gets the `tidy-docs` pass before anything new goes in. A budget is a
    prompt to look for stories and duplicates, never a reason to cut a rule or the reasoning that
-   makes it usable.
-5. **Decisions go in the decision log** (see the map): the why, not the diff, written so someone
+   makes it usable. When a tidy pass leaves a doc smaller, lower its budget to the new size plus
+   ~5%: budgets ratchet down, they don't just hold the line.
+6. **Decisions go in the decision log** (see the map): the why, not the diff, written so someone
    who wasn't there can follow it. When one reverses an older entry, mark the older one, or a
    search finds the stale answer first.
-6. **Procedures become scripts or skills.** A broken script fails loudly; a wrong paragraph gets
+7. **Procedures become scripts or skills.** A broken script fails loudly; a wrong paragraph gets
    believed.
-7. **Anything with an open/closed lifecycle is a GitHub issue**, never a doc: to-dos, open
+8. **Anything with an open/closed lifecycle is a GitHub issue**, never a doc: to-dos, open
    questions, "still needs verifying".
 
 **Before finishing:** did this make a doc untrue, or turn up something a doc should have said? Fix
