@@ -125,8 +125,9 @@ awaiting a human check. No in-repo to-do lists.
 
 ## Before you finish
 
-`npm run lint`, `npm run typecheck`, `npm test`, `npm run build`. Other scripts are in
-`package.json`.
+`npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, and `npm run docs:check` (doc
+size budgets and broken doc paths; the budgets live in `scripts/docs-check.ts`). Other scripts are
+in `package.json`.
 
 ## Where things are
 
